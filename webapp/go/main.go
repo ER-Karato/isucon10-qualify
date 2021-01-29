@@ -10,6 +10,7 @@ import (
 	"os"
 	"os/exec"
 	"path/filepath"
+	"regexp"
 	"strconv"
 	"strings"
 
@@ -30,24 +31,27 @@ var mySQLConnectionData *MySQLConnectionEnv
 var chairSearchCondition ChairSearchCondition
 var estateSearchCondition EstateSearchCondition
 
+var rep = regexp.MustCompile(`ISUCONbot(-Mobile)?|ISUCONbot-Image\/|Mediapartners-ISUCON|ISUCONCoffee|ISUCONFeedSeeker(Beta)?|crawler \(https:\/\/isucon\.invalid\/(support\/faq\/|help\/jp\/)| isubot| Isupider|Isupider(-image)?\+|(bot|crawler|spider)(?:[-_ .\/;@()]|$)`)
+
 type InitializeResponse struct {
 	Language string `json:"language"`
 }
 
 type Chair struct {
-	ID          int64  `db:"id" json:"id"`
-	Name        string `db:"name" json:"name"`
-	Description string `db:"description" json:"description"`
-	Thumbnail   string `db:"thumbnail" json:"thumbnail"`
-	Price       int64  `db:"price" json:"price"`
-	Height      int64  `db:"height" json:"height"`
-	Width       int64  `db:"width" json:"width"`
-	Depth       int64  `db:"depth" json:"depth"`
-	Color       string `db:"color" json:"color"`
-	Features    string `db:"features" json:"features"`
-	Kind        string `db:"kind" json:"kind"`
-	Popularity  int64  `db:"popularity" json:"-"`
-	Stock       int64  `db:"stock" json:"-"`
+	ID           int64  `db:"id" json:"id"`
+	Name         string `db:"name" json:"name"`
+	Description  string `db:"description" json:"description"`
+	Thumbnail    string `db:"thumbnail" json:"thumbnail"`
+	Price        int64  `db:"price" json:"price"`
+	Height       int64  `db:"height" json:"height"`
+	Width        int64  `db:"width" json:"width"`
+	Depth        int64  `db:"depth" json:"depth"`
+	Color        string `db:"color" json:"color"`
+	Features     string `db:"features" json:"features"`
+	Kind         string `db:"kind" json:"kind"`
+	Popularity   int64  `db:"popularity" json:"-"`
+	Stock        int64  `db:"stock" json:"-"`
+	NgPopularity int64  `db:"ngpopularity" json:"-"`
 }
 
 type ChairSearchResponse struct {
@@ -61,18 +65,20 @@ type ChairListResponse struct {
 
 //Estate 物件
 type Estate struct {
-	ID          int64   `db:"id" json:"id"`
-	Thumbnail   string  `db:"thumbnail" json:"thumbnail"`
-	Name        string  `db:"name" json:"name"`
-	Description string  `db:"description" json:"description"`
-	Latitude    float64 `db:"latitude" json:"latitude"`
-	Longitude   float64 `db:"longitude" json:"longitude"`
-	Address     string  `db:"address" json:"address"`
-	Rent        int64   `db:"rent" json:"rent"`
-	DoorHeight  int64   `db:"door_height" json:"doorHeight"`
-	DoorWidth   int64   `db:"door_width" json:"doorWidth"`
-	Features    string  `db:"features" json:"features"`
-	Popularity  int64   `db:"popularity" json:"-"`
+	ID           int64   `db:"id" json:"id"`
+	Thumbnail    string  `db:"thumbnail" json:"thumbnail"`
+	Name         string  `db:"name" json:"name"`
+	Description  string  `db:"description" json:"description"`
+	Latitude     float64 `db:"latitude" json:"latitude"`
+	Longitude    float64 `db:"longitude" json:"longitude"`
+	Address      string  `db:"address" json:"address"`
+	Rent         int64   `db:"rent" json:"rent"`
+	DoorHeight   int64   `db:"door_height" json:"doorHeight"`
+	DoorWidth    int64   `db:"door_width" json:"doorWidth"`
+	Features     string  `db:"features" json:"features"`
+	Popularity   int64   `db:"popularity" json:"-"`
+	NgPopularity int64   `db:"ngpopularity" json:"-"`
+	Pt           []byte  `db:"pt" json:"-"`
 }
 
 //EstateSearchResponse estate/searchへのレスポンスの形式
@@ -258,24 +264,24 @@ func main() {
 	e.POST("/initialize", initialize)
 
 	// Chair Handler
-	e.GET("/api/chair/:id", getChairDetail)
-	e.POST("/api/chair", postChair)
-	e.GET("/api/chair/search", searchChairs)
-	e.GET("/api/chair/low_priced", getLowPricedChair)
-	e.GET("/api/chair/search/condition", getChairSearchCondition)
-	e.POST("/api/chair/buy/:id", buyChair)
+	e.GET("/api/chair/:id", getChairDetail, skipMiddleware)
+	e.POST("/api/chair", postChair, skipMiddleware)
+	e.GET("/api/chair/search", searchChairs, skipMiddleware)
+	e.GET("/api/chair/low_priced", getLowPricedChair, skipMiddleware)
+	e.GET("/api/chair/search/condition", getChairSearchCondition, skipMiddleware)
+	e.POST("/api/chair/buy/:id", buyChair, skipMiddleware)
 
 	// Estate Handler
-	e.GET("/api/estate/:id", getEstateDetail)
-	e.POST("/api/estate", postEstate)
-	e.GET("/api/estate/search", searchEstates)
-	e.GET("/api/estate/low_priced", getLowPricedEstate)
-	e.POST("/api/estate/req_doc/:id", postEstateRequestDocument)
-	e.POST("/api/estate/nazotte", searchEstateNazotte)
-	e.GET("/api/estate/search/condition", getEstateSearchCondition)
-	e.GET("/api/recommended_estate/:id", searchRecommendedEstateWithChair)
+	e.GET("/api/estate/:id", getEstateDetail, skipMiddleware, skipMiddleware)
+	e.POST("/api/estate", postEstate, skipMiddleware)
+	e.GET("/api/estate/search", searchEstates, skipMiddleware)
+	e.GET("/api/estate/low_priced", getLowPricedEstate, skipMiddleware)
+	e.POST("/api/estate/req_doc/:id", postEstateRequestDocument, skipMiddleware)
+	e.POST("/api/estate/nazotte", searchEstateNazotte, skipMiddleware)
+	e.GET("/api/estate/search/condition", getEstateSearchCondition, skipMiddleware)
+	e.GET("/api/recommended_estate/:id", searchRecommendedEstateWithChair, skipMiddleware)
 
-	e.GET("/api/aaa", aaa)
+	e.GET("/api/aaa", aaa, skipMiddleware)
 
 	mySQLConnectionData = NewMySQLConnectionEnv()
 
@@ -290,6 +296,17 @@ func main() {
 	// Start server
 	serverPort := fmt.Sprintf(":%v", getEnv("SERVER_PORT", "1323"))
 	e.Logger.Fatal(e.Start(serverPort))
+}
+
+func skipMiddleware(next echo.HandlerFunc) echo.HandlerFunc {
+	return func(c echo.Context) error {
+		ua := c.Request().Header.Get("User-Agent")
+		if rep.MatchString(ua) {
+			return c.NoContent(http.StatusServiceUnavailable)
+		}
+		err := next(c)
+		return err
+	}
 }
 
 func aaa(c echo.Context) error {
@@ -312,6 +329,7 @@ func initialize(c echo.Context) error {
 		filepath.Join(sqlDir, "0_Schema.sql"),
 		filepath.Join(sqlDir, "1_DummyEstateData.sql"),
 		filepath.Join(sqlDir, "2_DummyChairData.sql"),
+		filepath.Join(sqlDir, "3_Add.sql"),
 	}
 
 	for _, p := range paths {
@@ -533,7 +551,7 @@ func searchChairs(c echo.Context) error {
 	searchQuery := "SELECT * FROM chair WHERE "
 	countQuery := "SELECT COUNT(*) FROM chair WHERE "
 	searchCondition := strings.Join(conditions, " AND ")
-	limitOffset := " ORDER BY popularity DESC, id ASC LIMIT ? OFFSET ?"
+	limitOffset := " ORDER BY ngpopularity ASC, id ASC LIMIT ? OFFSET ?"
 
 	var res ChairSearchResponse
 	err = db.Get(&res.Count, countQuery+searchCondition, params...)
@@ -813,7 +831,7 @@ func searchEstates(c echo.Context) error {
 	searchQuery := "SELECT * FROM estate WHERE "
 	countQuery := "SELECT COUNT(*) FROM estate WHERE "
 	searchCondition := strings.Join(conditions, " AND ")
-	limitOffset := " ORDER BY popularity DESC, id ASC LIMIT ? OFFSET ?"
+	limitOffset := " ORDER BY ngpopularity ASC, id ASC LIMIT ? OFFSET ?"
 
 	var res EstateSearchResponse
 	err = db.Get(&res.Count, countQuery+searchCondition, params...)
@@ -881,7 +899,7 @@ func searchRecommendedEstateWithChair(c echo.Context) error {
 	w := chair.Width
 	h := chair.Height
 	d := chair.Depth
-	query = `SELECT * FROM estate WHERE (door_width >= ? AND door_height >= ?) OR (door_width >= ? AND door_height >= ?) OR (door_width >= ? AND door_height >= ?) OR (door_width >= ? AND door_height >= ?) OR (door_width >= ? AND door_height >= ?) OR (door_width >= ? AND door_height >= ?) ORDER BY popularity DESC, id ASC LIMIT ?`
+	query = `SELECT * FROM estate WHERE (door_width >= ? AND door_height >= ?) OR (door_width >= ? AND door_height >= ?) OR (door_width >= ? AND door_height >= ?) OR (door_width >= ? AND door_height >= ?) OR (door_width >= ? AND door_height >= ?) OR (door_width >= ? AND door_height >= ?) ORDER BY ngpopularity ASC, id ASC LIMIT ?`
 	err = db.Select(&estates, query, w, h, w, d, h, w, h, d, d, w, d, h, Limit)
 	if err != nil {
 		if err == sql.ErrNoRows {
@@ -908,10 +926,9 @@ func searchEstateNazotte(c echo.Context) error {
 		return c.NoContent(http.StatusBadRequest)
 	}
 
-	b := coordinates.getBoundingBox()
-	estatesInBoundingBox := []Estate{}
-	query := `SELECT * FROM estate WHERE latitude <= ? AND latitude >= ? AND longitude <= ? AND longitude >= ? ORDER BY popularity DESC, id ASC`
-	err = db.Select(&estatesInBoundingBox, query, b.BottomRightCorner.Latitude, b.TopLeftCorner.Latitude, b.BottomRightCorner.Longitude, b.TopLeftCorner.Longitude)
+	estatesInPolygon := []Estate{}
+	query := fmt.Sprintf(`SELECT * FROM estate WHERE ST_Contains(ST_PolygonFromText(%s), pt) ORDER BY ngpopularity ASC, id ASC`, coordinates.coordinatesToText())
+	err = db.Select(&estatesInPolygon, query)
 	if err == sql.ErrNoRows {
 		c.Echo().Logger.Infof("select * from estate where latitude ...", err)
 		return c.JSON(http.StatusOK, EstateSearchResponse{Count: 0, Estates: []Estate{}})
@@ -920,24 +937,36 @@ func searchEstateNazotte(c echo.Context) error {
 		return c.NoContent(http.StatusInternalServerError)
 	}
 
-	estatesInPolygon := []Estate{}
-	for _, estate := range estatesInBoundingBox {
-		validatedEstate := Estate{}
+	// b := coordinates.getBoundingBox()
+	// estatesInBoundingBox := []Estate{}
+	// query := `SELECT * FROM estate WHERE latitude <= ? AND latitude >= ? AND longitude <= ? AND longitude >= ? ORDER BY popularity DESC, id ASC`
+	// err = db.Select(&estatesInBoundingBox, query, b.BottomRightCorner.Latitude, b.TopLeftCorner.Latitude, b.BottomRightCorner.Longitude, b.TopLeftCorner.Longitude)
+	// if err == sql.ErrNoRows {
+	// 	c.Echo().Logger.Infof("select * from estate where latitude ...", err)
+	// 	return c.JSON(http.StatusOK, EstateSearchResponse{Count: 0, Estates: []Estate{}})
+	// } else if err != nil {
+	// 	c.Echo().Logger.Errorf("database execution error : %v", err)
+	// 	return c.NoContent(http.StatusInternalServerError)
+	// }
 
-		point := fmt.Sprintf("'POINT(%f %f)'", estate.Latitude, estate.Longitude)
-		query := fmt.Sprintf(`SELECT * FROM estate WHERE id = ? AND ST_Contains(ST_PolygonFromText(%s), ST_GeomFromText(%s))`, coordinates.coordinatesToText(), point)
-		err = db.Get(&validatedEstate, query, estate.ID)
-		if err != nil {
-			if err == sql.ErrNoRows {
-				continue
-			} else {
-				c.Echo().Logger.Errorf("db access is failed on executing validate if estate is in polygon : %v", err)
-				return c.NoContent(http.StatusInternalServerError)
-			}
-		} else {
-			estatesInPolygon = append(estatesInPolygon, validatedEstate)
-		}
-	}
+	// estatesInPolygon := []Estate{}
+	// for _, estate := range estatesInBoundingBox {
+	// 	validatedEstate := Estate{}
+
+	// 	point := fmt.Sprintf("'POINT(%f %f)'", estate.Latitude, estate.Longitude)
+	// 	query := fmt.Sprintf(`SELECT * FROM estate WHERE id = ? AND ST_Contains(ST_PolygonFromText(%s), ST_GeomFromText(%s))`, coordinates.coordinatesToText(), point)
+	// 	err = db.Get(&validatedEstate, query, estate.ID)
+	// 	if err != nil {
+	// 		if err == sql.ErrNoRows {
+	// 			continue
+	// 		} else {
+	// 			c.Echo().Logger.Errorf("db access is failed on executing validate if estate is in polygon : %v", err)
+	// 			return c.NoContent(http.StatusInternalServerError)
+	// 		}
+	// 	} else {
+	// 		estatesInPolygon = append(estatesInPolygon, validatedEstate)
+	// 	}
+	// }
 
 	var re EstateSearchResponse
 	re.Estates = []Estate{}
