@@ -406,6 +406,9 @@ func postChair(c echo.Context) error {
 		return c.NoContent(http.StatusInternalServerError)
 	}
 	defer tx.Rollback()
+
+	valueStrings := make([]string, 0, len(records))
+	valueArgs := make([]interface{}, 0, len(records)*13)
 	for _, row := range records {
 		rm := RecordMapper{Record: row}
 		id := rm.NextInt()
@@ -425,12 +428,53 @@ func postChair(c echo.Context) error {
 			c.Logger().Errorf("failed to read record: %v", err)
 			return c.NoContent(http.StatusBadRequest)
 		}
-		_, err := tx.Exec("INSERT INTO chair(id, name, description, thumbnail, price, height, width, depth, color, features, kind, popularity, stock) VALUES(?,?,?,?,?,?,?,?,?,?,?,?,?)", id, name, description, thumbnail, price, height, width, depth, color, features, kind, popularity, stock)
-		if err != nil {
-			c.Logger().Errorf("failed to insert chair: %v", err)
-			return c.NoContent(http.StatusInternalServerError)
-		}
+		valueStrings = append(valueStrings, "(?,?,?,?,?,?,?,?,?,?,?,?,?)")
+		valueArgs = append(valueArgs, id)
+		valueArgs = append(valueArgs, name)
+		valueArgs = append(valueArgs, description)
+		valueArgs = append(valueArgs, thumbnail)
+		valueArgs = append(valueArgs, price)
+		valueArgs = append(valueArgs, height)
+		valueArgs = append(valueArgs, width)
+		valueArgs = append(valueArgs, depth)
+		valueArgs = append(valueArgs, color)
+		valueArgs = append(valueArgs, features)
+		valueArgs = append(valueArgs, kind)
+		valueArgs = append(valueArgs, popularity)
+		valueArgs = append(valueArgs, stock)
 	}
+	query := fmt.Sprintf("INSERT INTO chair(id, name, description, thumbnail, price, height, width, depth, color, features, kind, popularity, stock) VALUES %s", strings.Join(valueStrings, ","))
+	_, err = db.Exec(query, valueArgs...)
+	if err != nil {
+		c.Logger().Errorf("failed to insert chair: %v", err)
+		return c.NoContent(http.StatusInternalServerError)
+	}
+
+	// for _, row := range records {
+	// 	rm := RecordMapper{Record: row}
+	// 	id := rm.NextInt()
+	// 	name := rm.NextString()
+	// 	description := rm.NextString()
+	// 	thumbnail := rm.NextString()
+	// 	price := rm.NextInt()
+	// 	height := rm.NextInt()
+	// 	width := rm.NextInt()
+	// 	depth := rm.NextInt()
+	// 	color := rm.NextString()
+	// 	features := rm.NextString()
+	// 	kind := rm.NextString()
+	// 	popularity := rm.NextInt()
+	// 	stock := rm.NextInt()
+	// 	if err := rm.Err(); err != nil {
+	// 		c.Logger().Errorf("failed to read record: %v", err)
+	// 		return c.NoContent(http.StatusBadRequest)
+	// 	}
+	// 	_, err := tx.Exec("INSERT INTO chair(id, name, description, thumbnail, price, height, width, depth, color, features, kind, popularity, stock) VALUES(?,?,?,?,?,?,?,?,?,?,?,?,?)", id, name, description, thumbnail, price, height, width, depth, color, features, kind, popularity, stock)
+	// 	if err != nil {
+	// 		c.Logger().Errorf("failed to insert chair: %v", err)
+	// 		return c.NoContent(http.StatusInternalServerError)
+	// 	}
+	// }
 	if err := tx.Commit(); err != nil {
 		c.Logger().Errorf("failed to commit tx: %v", err)
 		return c.NoContent(http.StatusInternalServerError)
@@ -716,6 +760,9 @@ func postEstate(c echo.Context) error {
 		return c.NoContent(http.StatusInternalServerError)
 	}
 	defer tx.Rollback()
+
+	valueStrings := make([]string, 0, len(records))
+	valueArgs := make([]interface{}, 0, len(records)*13)
 	for _, row := range records {
 		rm := RecordMapper{Record: row}
 		id := rm.NextInt()
@@ -734,14 +781,57 @@ func postEstate(c echo.Context) error {
 			c.Logger().Errorf("failed to read record: %v", err)
 			return c.NoContent(http.StatusBadRequest)
 		}
-		point := fmt.Sprintf("'POINT(%f %f)'", latitude, longitude)
-		query := fmt.Sprintf(`INSERT INTO estate(id, name, description, thumbnail, address, latitude, longitude, rent, door_height, door_width, features, popularity, pt) VALUES(?,?,?,?,?,?,?,?,?,?,?,?,ST_GeomFromText(%s))`, point)
-		_, err := tx.Exec(query, id, name, description, thumbnail, address, latitude, longitude, rent, doorHeight, doorWidth, features, popularity)
-		if err != nil {
-			c.Logger().Errorf("failed to insert estate: %v", err)
-			return c.NoContent(http.StatusInternalServerError)
-		}
+		point := fmt.Sprintf("ST_GeomFromText('POINT(%f %f))'", latitude, longitude)
+
+		valueStrings = append(valueStrings, "(?,?,?,?,?,?,?,?,?,?,?,?,?)")
+		valueArgs = append(valueArgs, id)
+		valueArgs = append(valueArgs, name)
+		valueArgs = append(valueArgs, description)
+		valueArgs = append(valueArgs, thumbnail)
+		valueArgs = append(valueArgs, address)
+		valueArgs = append(valueArgs, latitude)
+		valueArgs = append(valueArgs, longitude)
+		valueArgs = append(valueArgs, rent)
+		valueArgs = append(valueArgs, doorHeight)
+		valueArgs = append(valueArgs, doorWidth)
+		valueArgs = append(valueArgs, features)
+		valueArgs = append(valueArgs, popularity)
+		valueArgs = append(valueArgs, point)
 	}
+	query := fmt.Sprintf("INSERT INTO estate(id, name, description, thumbnail, address, latitude, longitude, rent, door_height, door_width, features, popularity, pt) VALUES %s", strings.Join(valueStrings, ","))
+	_, err = db.Exec(query, valueArgs...)
+	if err != nil {
+		c.Logger().Errorf("failed to insert chair: %v", err)
+		return c.NoContent(http.StatusInternalServerError)
+	}
+
+	// for _, row := range records {
+	// 	rm := RecordMapper{Record: row}
+	// 	id := rm.NextInt()
+	// 	name := rm.NextString()
+	// 	description := rm.NextString()
+	// 	thumbnail := rm.NextString()
+	// 	address := rm.NextString()
+	// 	latitude := rm.NextFloat()
+	// 	longitude := rm.NextFloat()
+	// 	rent := rm.NextInt()
+	// 	doorHeight := rm.NextInt()
+	// 	doorWidth := rm.NextInt()
+	// 	features := rm.NextString()
+	// 	popularity := rm.NextInt()
+	// 	if err := rm.Err(); err != nil {
+	// 		c.Logger().Errorf("failed to read record: %v", err)
+	// 		return c.NoContent(http.StatusBadRequest)
+	// 	}
+	// 	point := fmt.Sprintf("ST_GeomFromText('POINT(%f %f))'", latitude, longitude)
+	// 	query := fmt.Sprintf(`INSERT INTO estate(id, name, description, thumbnail, address, latitude, longitude, rent, door_height, door_width, features, popularity, pt) VALUES(?,?,?,?,?,?,?,?,?,?,?,?,?)`, point)
+	// 	_, err := tx.Exec(query, id, name, description, thumbnail, address, latitude, longitude, rent, doorHeight, doorWidth, features, popularity)
+	// 	if err != nil {
+	// 		c.Logger().Errorf("failed to insert estate: %v", err)
+	// 		return c.NoContent(http.StatusInternalServerError)
+	// 	}
+	// }
+
 	if err := tx.Commit(); err != nil {
 		c.Logger().Errorf("failed to commit tx: %v", err)
 		return c.NoContent(http.StatusInternalServerError)
