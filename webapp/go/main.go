@@ -781,7 +781,7 @@ func postEstate(c echo.Context) error {
 			c.Logger().Errorf("failed to read record: %v", err)
 			return c.NoContent(http.StatusBadRequest)
 		}
-		point := fmt.Sprintf("ST_GeomFromText('POINT(%f %f))'", latitude, longitude)
+		point := fmt.Sprintf("ST_GeomFromText('POINT(%f %f)')", latitude, longitude)
 
 		valueStrings = append(valueStrings, "(?,?,?,?,?,?,?,?,?,?,?,?,"+point+")")
 		valueArgs = append(valueArgs, id)
@@ -797,10 +797,10 @@ func postEstate(c echo.Context) error {
 		valueArgs = append(valueArgs, features)
 		valueArgs = append(valueArgs, popularity)
 	}
-	query := fmt.Sprintf("INSERT INTO estate(id, name, description, thumbnail, address, latitude, longitude, rent, door_height, door_width, features, popularity, pt) VALUES %s", strings.Join(valueStrings, ","))
+	query := fmt.Sprintf("INSERT INTO estate(id, name, description, thumbnail, address, latitude, longitude, rent, door_height, door_width, features, popularity, pt) VALUES%s", strings.Join(valueStrings, ","))
 	_, err = db.Exec(query, valueArgs...)
 	if err != nil {
-		c.Logger().Errorf("failed to insert chair: %v", err)
+		c.Logger().Errorf("failed to insert estate: %v", err)
 		return c.NoContent(http.StatusInternalServerError)
 	}
 
@@ -822,7 +822,7 @@ func postEstate(c echo.Context) error {
 	// 		c.Logger().Errorf("failed to read record: %v", err)
 	// 		return c.NoContent(http.StatusBadRequest)
 	// 	}
-	// 	point := fmt.Sprintf("ST_GeomFromText('POINT(%f %f))'", latitude, longitude)
+	// 	point := fmt.Sprintf("ST_GeomFromText('POINT(%f %f)')", latitude, longitude)
 	// 	query := fmt.Sprintf(`INSERT INTO estate(id, name, description, thumbnail, address, latitude, longitude, rent, door_height, door_width, features, popularity, pt) VALUES(?,?,?,?,?,?,?,?,?,?,?,?,%s)`, point)
 	// 	_, err := tx.Exec(query, id, name, description, thumbnail, address, latitude, longitude, rent, doorHeight, doorWidth, features, popularity)
 	// 	if err != nil {
