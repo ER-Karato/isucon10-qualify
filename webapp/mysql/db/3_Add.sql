@@ -7,7 +7,7 @@ ALTER TABLE estate ADD INDEX index_door_height_rent (door_height,rent);
 ALTER TABLE estate ADD INDEX index_door_width_rent (door_width,rent);
 ALTER TABLE estate ADD INDEX index_door_height_door_width (door_height,door_width);
 
-ALTER TABLE chair ADD INDEX index_all (prirentce,door_height,door_width);
+ALTER TABLE estate ADD INDEX index_all (prirentce,door_height,door_width);
 
 ALTER TABLE estate ADD INDEX index_id (id);
 ALTER TABLE estate ADD INDEX index_rent (rent);
