@@ -592,21 +592,22 @@ func searchChairs(c echo.Context) error {
 		return c.NoContent(http.StatusBadRequest)
 	}
 
-	searchQuery := "SELECT * FROM chair WHERE "
-	countQuery := "SELECT COUNT(*) FROM chair WHERE "
+	countQuery := "SELECT COUNT(id) FROM chair WHERE "
 	searchCondition := strings.Join(conditions, " AND ")
-	limitOffset := " ORDER BY ngpopularity ASC, id ASC LIMIT ? OFFSET ?"
-
 	var res ChairSearchResponse
 	err = db.Get(&res.Count, countQuery+searchCondition, params...)
+	defer measure.Start("searchChairs_count").Stop()
 	if err != nil {
 		c.Logger().Errorf("searchChairs DB execution error : %v", err)
 		return c.NoContent(http.StatusInternalServerError)
 	}
 
+	searchQuery := "SELECT * FROM chair WHERE "
+	limitOffset := " ORDER BY ngpopularity ASC, id ASC LIMIT ? OFFSET ?"
 	chairs := []Chair{}
 	params = append(params, perPage, page*perPage)
 	err = db.Select(&chairs, searchQuery+searchCondition+limitOffset, params...)
+	defer measure.Start("searchChairs_get").Stop()
 	if err != nil {
 		if err == sql.ErrNoRows {
 			return c.JSON(http.StatusOK, ChairSearchResponse{Count: 0, Chairs: []Chair{}})
@@ -919,21 +920,22 @@ func searchEstates(c echo.Context) error {
 		return c.NoContent(http.StatusBadRequest)
 	}
 
-	searchQuery := "SELECT * FROM estate WHERE "
-	countQuery := "SELECT COUNT(*) FROM estate WHERE "
+	countQuery := "SELECT COUNT(id) FROM estate WHERE "
 	searchCondition := strings.Join(conditions, " AND ")
-	limitOffset := " ORDER BY ngpopularity ASC, id ASC LIMIT ? OFFSET ?"
-
 	var res EstateSearchResponse
 	err = db.Get(&res.Count, countQuery+searchCondition, params...)
+	defer measure.Start("searchEstates_count").Stop()
 	if err != nil {
 		c.Logger().Errorf("searchEstates DB execution error : %v", err)
 		return c.NoContent(http.StatusInternalServerError)
 	}
 
+	searchQuery := "SELECT * FROM estate WHERE "
+	limitOffset := " ORDER BY ngpopularity ASC, id ASC LIMIT ? OFFSET ?"
 	estates := []Estate{}
 	params = append(params, perPage, page*perPage)
 	err = db.Select(&estates, searchQuery+searchCondition+limitOffset, params...)
+	defer measure.Start("searchEstates_get").Stop()
 	if err != nil {
 		if err == sql.ErrNoRows {
 			return c.JSON(http.StatusOK, EstateSearchResponse{Count: 0, Estates: []Estate{}})
