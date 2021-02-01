@@ -3,6 +3,7 @@
   become_user: root
   roles:
     - role: common
+    - role: competitor-kernel
     - role: langs
     - role: web-bootstrap-my
     - role: web-go
