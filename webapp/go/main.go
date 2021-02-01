@@ -1020,7 +1020,7 @@ func searchEstateNazotte(c echo.Context) error {
 	}
 
 	estatesInPolygon := []Estate{}
-	query := fmt.Sprintf(`SELECT * FROM estate WHERE ST_Contains(ST_PolygonFromText(%s), pt) ORDER BY ngpopularity ASC, id ASC LIMIT %s`, coordinates.coordinatesToText(), NazotteLimit)
+	query := fmt.Sprintf(`SELECT * FROM estate WHERE ST_Contains(ST_PolygonFromText(%s), pt) ORDER BY ngpopularity ASC, id ASC LIMIT %s`, coordinates.coordinatesToText(), strconv.Itoa(NazotteLimit))
 	err = db.Select(&estatesInPolygon, query)
 	if err == sql.ErrNoRows {
 		c.Echo().Logger.Infof("select * from estate where latitude ...", err)

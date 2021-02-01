@@ -6,8 +6,8 @@ ALTER TABLE estate ADD INDEX index_ngpopularity_id (ngpopularity,id);
 ALTER TABLE estate ADD INDEX index_rent_id (rent,id);
 ALTER TABLE estate ADD INDEX index_door_height_rent (door_height,rent);
 ALTER TABLE estate ADD INDEX index_door_width_rent (door_width,rent);
-ALTER TABLE estate ADD INDEX index_door_height_door_width (door_height,door_width);
-ALTER TABLE estate ADD INDEX index_door_height_door_width_rent (door_height,door_width,rent);
+ALTER TABLE estate ADD INDEX index_door_height_door_width_ngpopularity_id (door_height,door_width,ngpopularity,id);
+ALTER TABLE estate ADD INDEX index_door_height_door_width_rent_width_ngpopularity_id (door_height,door_width,rent,ngpopularity,id);
 
 ALTER TABLE estate ADD INDEX index_id (id);
 ALTER TABLE estate ADD INDEX index_rent (rent);
@@ -25,6 +25,7 @@ ALTER TABLE chair ADD INDEX index_height_stock (height,stock);
 ALTER TABLE chair ADD INDEX index_depth_stock (depth,stock);
 ALTER TABLE chair ADD INDEX index_features_stock (features,stock);
 ALTER TABLE chair ADD INDEX index_kind_stock (kind,stock);
+ALTER TABLE chair ADD INDEX index_stock_price_id (stock,price,id);
 ALTER TABLE chair ADD INDEX index_all (price,height,width,depth,kind,color,features,stock);
 
 ALTER TABLE chair ADD INDEX index_id (id);
