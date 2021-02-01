@@ -14,8 +14,6 @@ import (
 	"strconv"
 	"strings"
 
-	// "github.com/najeira/measure"
-
 	_ "github.com/go-sql-driver/mysql"
 	"github.com/jmoiron/sqlx"
 	"github.com/labstack/echo"
@@ -226,7 +224,7 @@ func getEnv(key, defaultValue string) string {
 
 //ConnectDB isuumoデータベースに接続する
 func (mc *MySQLConnectionEnv) ConnectDB() (*sqlx.DB, error) {
-	// defer measure.Start("MySQLConnectionEnv.ConnectDB").Stop()
+	defer measure.Start("MySQLConnectionEnv.ConnectDB").Stop()
 
 	dsn := fmt.Sprintf("%v:%v@tcp(%v:%v)/%v", mc.User, mc.Password, mc.Host, mc.Port, mc.DBName)
 	return sqlx.Open("mysql", dsn)
@@ -281,7 +279,7 @@ func main() {
 	e.GET("/api/estate/search/condition", getEstateSearchCondition, skipMiddleware)
 	e.GET("/api/recommended_estate/:id", searchRecommendedEstateWithChair, skipMiddleware)
 
-	// e.GET("/api/aaa", aaa, skipMiddleware)
+	e.GET("/api/aaa", aaa, skipMiddleware)
 
 	mySQLConnectionData = NewMySQLConnectionEnv()
 
@@ -309,20 +307,20 @@ func skipMiddleware(next echo.HandlerFunc) echo.HandlerFunc {
 	}
 }
 
-// func aaa(c echo.Context) error {
-// 	stats := measure.GetStats()
-// 	stats.SortDesc("sum")
+func aaa(c echo.Context) error {
+	stats := measure.GetStats()
+	stats.SortDesc("sum")
 
-// 	w := ""
-// 	for _, s := range stats {
-// 		w += fmt.Sprintf("%s,%d,%f,%f,%f,%f,%f,%f\n",
-// 			s.Key, s.Count, s.Sum, s.Min, s.Max, s.Avg, s.Rate, s.P95)
-// 	}
-// 	return c.JSON(http.StatusOK, w)
-// }
+	w := ""
+	for _, s := range stats {
+		w += fmt.Sprintf("%s,%d,%f,%f,%f,%f,%f,%f\n",
+			s.Key, s.Count, s.Sum, s.Min, s.Max, s.Avg, s.Rate, s.P95)
+	}
+	return c.JSON(http.StatusOK, w)
+}
 
 func initialize(c echo.Context) error {
-	// defer measure.Start("initialize").Stop()
+	defer measure.Start("initialize").Stop()
 
 	sqlDir := filepath.Join("..", "mysql", "db")
 	paths := []string{
@@ -354,7 +352,7 @@ func initialize(c echo.Context) error {
 }
 
 func getChairDetail(c echo.Context) error {
-	// defer measure.Start("getChairDetail").Stop()
+	defer measure.Start("getChairDetail").Stop()
 
 	id, err := strconv.Atoi(c.Param("id"))
 	if err != nil {
@@ -381,7 +379,7 @@ func getChairDetail(c echo.Context) error {
 }
 
 func postChair(c echo.Context) error {
-	// defer measure.Start("postChair").Stop()
+	defer measure.Start("postChair").Stop()
 
 	header, err := c.FormFile("chairs")
 	if err != nil {
@@ -439,7 +437,7 @@ func postChair(c echo.Context) error {
 }
 
 func searchChairs(c echo.Context) error {
-	// defer measure.Start("searchChairs").Stop()
+	defer measure.Start("searchChairs").Stop()
 
 	conditions := make([]string, 0)
 	params := make([]interface{}, 0)
@@ -577,7 +575,7 @@ func searchChairs(c echo.Context) error {
 }
 
 func buyChair(c echo.Context) error {
-	// defer measure.Start("buyChair").Stop()
+	defer measure.Start("buyChair").Stop()
 
 	m := echo.Map{}
 	if err := c.Bind(&m); err != nil {
@@ -635,7 +633,7 @@ func getChairSearchCondition(c echo.Context) error {
 }
 
 func getLowPricedChair(c echo.Context) error {
-	// defer measure.Start("getLowPricedChair").Stop()
+	defer measure.Start("getLowPricedChair").Stop()
 
 	var chairs []Chair
 	query := `SELECT * FROM chair WHERE stock > 0 ORDER BY price ASC, id ASC LIMIT ?`
@@ -653,7 +651,7 @@ func getLowPricedChair(c echo.Context) error {
 }
 
 func getEstateDetail(c echo.Context) error {
-	// defer measure.Start("getEstateDetail").Stop()
+	defer measure.Start("getEstateDetail").Stop()
 
 	id, err := strconv.Atoi(c.Param("id"))
 	if err != nil {
@@ -676,7 +674,7 @@ func getEstateDetail(c echo.Context) error {
 }
 
 func getRange(cond RangeCondition, rangeID string) (*Range, error) {
-	// defer measure.Start("getRange").Stop()
+	defer measure.Start("getRange").Stop()
 
 	RangeIndex, err := strconv.Atoi(rangeID)
 	if err != nil {
@@ -691,7 +689,7 @@ func getRange(cond RangeCondition, rangeID string) (*Range, error) {
 }
 
 func postEstate(c echo.Context) error {
-	// defer measure.Start("postEstate").Stop()
+	defer measure.Start("postEstate").Stop()
 
 	header, err := c.FormFile("estates")
 	if err != nil {
@@ -750,7 +748,7 @@ func postEstate(c echo.Context) error {
 }
 
 func searchEstates(c echo.Context) error {
-	// defer measure.Start("searchEstates").Stop()
+	defer measure.Start("searchEstates").Stop()
 
 	conditions := make([]string, 0)
 	params := make([]interface{}, 0)
@@ -859,7 +857,7 @@ func searchEstates(c echo.Context) error {
 }
 
 func getLowPricedEstate(c echo.Context) error {
-	// defer measure.Start("getLowPricedEstate").Stop()
+	defer measure.Start("getLowPricedEstate").Stop()
 
 	estates := make([]Estate, 0, Limit)
 	query := `SELECT * FROM estate ORDER BY rent ASC, id ASC LIMIT ?`
@@ -877,7 +875,7 @@ func getLowPricedEstate(c echo.Context) error {
 }
 
 func searchRecommendedEstateWithChair(c echo.Context) error {
-	// defer measure.Start("searchRecommendedEstateWithChair").Stop()
+	defer measure.Start("searchRecommendedEstateWithChair").Stop()
 
 	id, err := strconv.Atoi(c.Param("id"))
 	if err != nil {
@@ -915,7 +913,7 @@ func searchRecommendedEstateWithChair(c echo.Context) error {
 }
 
 func searchEstateNazotte(c echo.Context) error {
-	// defer measure.Start("searchEstateNazotte").Stop()
+	defer measure.Start("searchEstateNazotte").Stop()
 
 	coordinates := Coordinates{}
 	err := c.Bind(&coordinates)
@@ -983,7 +981,7 @@ func searchEstateNazotte(c echo.Context) error {
 }
 
 func postEstateRequestDocument(c echo.Context) error {
-	// defer measure.Start("postEstateRequestDocument").Stop()
+	defer measure.Start("postEstateRequestDocument").Stop()
 
 	m := echo.Map{}
 	if err := c.Bind(&m); err != nil {
