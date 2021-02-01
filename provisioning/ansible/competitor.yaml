@@ -2,7 +2,7 @@
   become: yes
   become_user: root
   roles:
-    - role: common
+    - role: common-my
     - role: langs
     - role: web-bootstrap-my
     - role: web-go

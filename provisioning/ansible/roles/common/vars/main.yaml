@@ -1,5 +1,2 @@
 ---
 repository: https://github.com/isucon10-qualify/isucon10-qualify.git
-kernel:
-  - { param: 'fs.file-max', value: '655360' }
-  - { param: 'net.core.somaxconn', value: '65535' }
