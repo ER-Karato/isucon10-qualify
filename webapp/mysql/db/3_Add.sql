@@ -3,6 +3,7 @@ ALTER TABLE estate MODIFY COLUMN pt POINT NOT NULL;
 ALTER TABLE estate ADD ngpopularity INTEGER AS (-popularity) NOT NULL;
 
 ALTER TABLE estate ADD INDEX index_ngpopularity_id (ngpopularity,id);
+ALTER TABLE estate ADD INDEX index_rent_id (rent,id);
 ALTER TABLE estate ADD INDEX index_door_height_rent (door_height,rent);
 ALTER TABLE estate ADD INDEX index_door_width_rent (door_width,rent);
 ALTER TABLE estate ADD INDEX index_door_height_door_width (door_height,door_width);
@@ -18,13 +19,12 @@ ALTER TABLE estate ADD SPATIAL INDEX index_pt (pt);
 ALTER TABLE chair ADD ngpopularity INTEGER AS (-popularity) NOT NULL;
 
 ALTER TABLE chair ADD INDEX index_ngpopularity_id (ngpopularity,id);
-
+ALTER TABLE chair ADD INDEX index_price_id (price,id);
 ALTER TABLE chair ADD INDEX index_price_stock (price,stock);
 ALTER TABLE chair ADD INDEX index_height_stock (height,stock);
 ALTER TABLE chair ADD INDEX index_depth_stock (depth,stock);
 ALTER TABLE chair ADD INDEX index_features_stock (features,stock);
 ALTER TABLE chair ADD INDEX index_kind_stock (kind,stock);
-
 ALTER TABLE chair ADD INDEX index_all (price,height,width,depth,kind,color,features,stock);
 
 ALTER TABLE chair ADD INDEX index_id (id);
