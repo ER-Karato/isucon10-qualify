@@ -101,6 +101,7 @@
   become_user: root
   shell: |
       mysql -uroot -proot -e "GRANT ALL PRIVILEGES ON *.* TO isucon@localhost IDENTIFIED BY 'isucon' WITH GRANT OPTION; FLUSH PRIVILEGES;"
+      mysql -uroot -proot -e "GRANT ALL PRIVILEGES ON *.* TO isucon@172.28.128.80 IDENTIFIED BY 'isucon' WITH GRANT OPTION; FLUSH PRIVILEGES;"
 
 - name: Remove Temporary file
   become: yes
