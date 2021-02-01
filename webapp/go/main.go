@@ -783,7 +783,7 @@ func postEstate(c echo.Context) error {
 		}
 		point := fmt.Sprintf("ST_GeomFromText('POINT(%f %f))'", latitude, longitude)
 
-		valueStrings = append(valueStrings, "(?,?,?,?,?,?,?,?,?,?,?,?,?)")
+		valueStrings = append(valueStrings, "(?,?,?,?,?,?,?,?,?,?,?,?,"+point+")")
 		valueArgs = append(valueArgs, id)
 		valueArgs = append(valueArgs, name)
 		valueArgs = append(valueArgs, description)
@@ -796,7 +796,6 @@ func postEstate(c echo.Context) error {
 		valueArgs = append(valueArgs, doorWidth)
 		valueArgs = append(valueArgs, features)
 		valueArgs = append(valueArgs, popularity)
-		valueArgs = append(valueArgs, point)
 	}
 	query := fmt.Sprintf("INSERT INTO estate(id, name, description, thumbnail, address, latitude, longitude, rent, door_height, door_width, features, popularity, pt) VALUES %s", strings.Join(valueStrings, ","))
 	_, err = db.Exec(query, valueArgs...)
