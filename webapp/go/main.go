@@ -823,7 +823,7 @@ func postEstate(c echo.Context) error {
 	// 		return c.NoContent(http.StatusBadRequest)
 	// 	}
 	// 	point := fmt.Sprintf("ST_GeomFromText('POINT(%f %f))'", latitude, longitude)
-	// 	query := fmt.Sprintf(`INSERT INTO estate(id, name, description, thumbnail, address, latitude, longitude, rent, door_height, door_width, features, popularity, pt) VALUES(?,?,?,?,?,?,?,?,?,?,?,?,?)`, point)
+	// 	query := fmt.Sprintf(`INSERT INTO estate(id, name, description, thumbnail, address, latitude, longitude, rent, door_height, door_width, features, popularity, pt) VALUES(?,?,?,?,?,?,?,?,?,?,?,?,%s)`, point)
 	// 	_, err := tx.Exec(query, id, name, description, thumbnail, address, latitude, longitude, rent, doorHeight, doorWidth, features, popularity)
 	// 	if err != nil {
 	// 		c.Logger().Errorf("failed to insert estate: %v", err)
