@@ -34,61 +34,6 @@ var estateSearchCondition EstateSearchCondition
 
 var rep = regexp.MustCompile(`ISUCONbot(-Mobile)?|ISUCONbot-Image\/|Mediapartners-ISUCON|ISUCONCoffee|ISUCONFeedSeeker(Beta)?|crawler \(https:\/\/isucon\.invalid\/(support\/faq\/|help\/jp\/)| isubot| Isupider|Isupider(-image)?\+|(bot|crawler|spider)(?:[-_ .\/;@()]|$)`)
 
-var targetBot []string = []string{
-	"ISUCONbot",
-	"ISUCONbot-Mobile",
-	"ISUCONbot-Image/",
-	"Mediapartners-ISUCON",
-	"ISUCONCoffee",
-	"ISUCONFeedSeeker",
-	"ISUCONFeedSeekerBeta",
-	"isubot",
-	"Isupider",
-	"Isupider+",
-	"Isupider-image+",
-	"crawler (https://isucon.invalid/support/faq/",
-	"crawler (https://isucon.invalid/help/jp/",
-	"bot?",
-	"bot:",
-	"bot[",
-	"bot-",
-	"bot_",
-	"bot.",
-	"bot/",
-	"bot;",
-	"bot@",
-	"bot(",
-	"bot)",
-	"crawler?",
-	"crawler:",
-	"crawler[",
-	"crawler-",
-	"crawler_",
-	"crawler.",
-	"crawler/",
-	"crawler;",
-	"crawler@",
-	"crawler(",
-	"crawler)",
-	"spider?",
-	"spider:",
-	"spider[",
-	"spider-",
-	"spider_",
-	"spider.",
-	"spider/",
-	"spider;",
-	"spider@",
-	"spider(",
-	"spider)",
-}
-
-var targetBot2 []string = []string{
-	"bot",
-	"crawler",
-	"spider",
-}
-
 type InitializeResponse struct {
 	Language string `json:"language"`
 }
@@ -329,22 +274,22 @@ func main() {
 	e.POST("/initialize", initialize)
 
 	// Chair Handler
-	e.GET("/api/chair/:id", getChairDetail, skipMiddleware2)
-	e.POST("/api/chair", postChair, skipMiddleware2)
-	e.GET("/api/chair/search", searchChairs, skipMiddleware2)
-	e.GET("/api/chair/low_priced", getLowPricedChair, skipMiddleware2)
-	e.GET("/api/chair/search/condition", getChairSearchCondition, skipMiddleware2)
-	e.POST("/api/chair/buy/:id", buyChair, skipMiddleware2)
+	e.GET("/api/chair/:id", getChairDetail, skipMiddleware)
+	e.POST("/api/chair", postChair, skipMiddleware)
+	e.GET("/api/chair/search", searchChairs, skipMiddleware)
+	e.GET("/api/chair/low_priced", getLowPricedChair, skipMiddleware)
+	e.GET("/api/chair/search/condition", getChairSearchCondition, skipMiddleware)
+	e.POST("/api/chair/buy/:id", buyChair, skipMiddleware)
 
 	// Estate Handler
-	e.GET("/api/estate/:id", getEstateDetail, skipMiddleware, skipMiddleware2)
-	e.POST("/api/estate", postEstate, skipMiddleware2)
-	e.GET("/api/estate/search", searchEstates, skipMiddleware2)
-	e.GET("/api/estate/low_priced", getLowPricedEstate, skipMiddleware2)
-	e.POST("/api/estate/req_doc/:id", postEstateRequestDocument, skipMiddleware2)
-	e.POST("/api/estate/nazotte", searchEstateNazotte, skipMiddleware2)
-	e.GET("/api/estate/search/condition", getEstateSearchCondition, skipMiddleware2)
-	e.GET("/api/recommended_estate/:id", searchRecommendedEstateWithChair, skipMiddleware2)
+	e.GET("/api/estate/:id", getEstateDetail, skipMiddleware, skipMiddleware)
+	e.POST("/api/estate", postEstate, skipMiddleware)
+	e.GET("/api/estate/search", searchEstates, skipMiddleware)
+	e.GET("/api/estate/low_priced", getLowPricedEstate, skipMiddleware)
+	e.POST("/api/estate/req_doc/:id", postEstateRequestDocument, skipMiddleware)
+	e.POST("/api/estate/nazotte", searchEstateNazotte, skipMiddleware)
+	e.GET("/api/estate/search/condition", getEstateSearchCondition, skipMiddleware)
+	e.GET("/api/recommended_estate/:id", searchRecommendedEstateWithChair, skipMiddleware)
 
 	// e.GET("/api/aaa", aaa, skipMiddleware)
 
@@ -367,30 +312,6 @@ func skipMiddleware(next echo.HandlerFunc) echo.HandlerFunc {
 	return func(c echo.Context) error {
 		ua := c.Request().Header.Get("User-Agent")
 		if rep.MatchString(ua) {
-			return c.NoContent(http.StatusServiceUnavailable)
-		}
-		err := next(c)
-		return err
-	}
-}
-
-func skipMiddleware2(next echo.HandlerFunc) echo.HandlerFunc {
-	return func(c echo.Context) error {
-		ua := c.Request().Header.Get("User-Agent")
-		bot := false
-		for _, s := range targetBot {
-			if strings.Index(ua, s) > -1 {
-				bot = true
-				break
-			}
-		}
-		for _, s := range targetBot2 {
-			if strings.HasSuffix(ua, s) {
-				bot = true
-				break
-			}
-		}
-		if bot {
 			return c.NoContent(http.StatusServiceUnavailable)
 		}
 		err := next(c)
