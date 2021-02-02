@@ -235,9 +235,9 @@ func (mc *MySQLConnectionEnv) ConnectDB() (*sqlx.DB, error) {
 		return nil, err
 	}
 
-	db.SetMaxIdleConns(1)
-	db.SetMaxOpenConns(1)
-	db.SetConnMaxLifetime(1 * time.Second)
+	db.SetMaxIdleConns(4)
+	db.SetMaxOpenConns(4)
+	db.SetConnMaxLifetime(4 * time.Second)
 
 	return db, err
 }
