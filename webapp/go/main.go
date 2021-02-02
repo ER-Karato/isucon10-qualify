@@ -371,7 +371,19 @@ func initialize(c echo.Context) error {
 			mySQLConnectionData.DBName,
 			sqlFile,
 		)
+		cmdStr2 := fmt.Sprintf("mysql -h %v -u %v -p%v -P %v %v < %v",
+			mySQLConnectionChairData.Host,
+			mySQLConnectionChairData.User,
+			mySQLConnectionChairData.Password,
+			mySQLConnectionChairData.Port,
+			mySQLConnectionChairData.DBName,
+			sqlFile,
+		)
 		if err := exec.Command("bash", "-c", cmdStr).Run(); err != nil {
+			c.Logger().Errorf("Initialize script error : %v", err)
+			return c.NoContent(http.StatusInternalServerError)
+		}
+		if err := exec.Command("bash", "-c", cmdStr2).Run(); err != nil {
 			c.Logger().Errorf("Initialize script error : %v", err)
 			return c.NoContent(http.StatusInternalServerError)
 		}
@@ -393,7 +405,7 @@ func getChairDetail(c echo.Context) error {
 
 	chair := Chair{}
 	query := `SELECT * FROM chair WHERE id = ?`
-	err = db.Get(&chair, query, id)
+	err = dbChair.Get(&chair, query, id)
 	if err != nil {
 		if err == sql.ErrNoRows {
 			c.Echo().Logger.Infof("requested id's chair not found : %v", id)
@@ -429,7 +441,7 @@ func postChair(c echo.Context) error {
 		return c.NoContent(http.StatusInternalServerError)
 	}
 
-	tx, err := db.Begin()
+	tx, err := dbChair.Begin()
 	if err != nil {
 		c.Logger().Errorf("failed to begin tx: %v", err)
 		return c.NoContent(http.StatusInternalServerError)
@@ -473,7 +485,7 @@ func postChair(c echo.Context) error {
 		valueArgs = append(valueArgs, stock)
 	}
 	query := fmt.Sprintf("INSERT INTO chair(id, name, description, thumbnail, price, height, width, depth, color, features, kind, popularity, stock) VALUES %s", strings.Join(valueStrings, ","))
-	_, err = db.Exec(query, valueArgs...)
+	_, err = tx.Exec(query, valueArgs...)
 	if err != nil {
 		c.Logger().Errorf("failed to insert chair: %v", err)
 		return c.NoContent(http.StatusInternalServerError)
@@ -624,7 +636,7 @@ func searchChairs(c echo.Context) error {
 	countQuery := "SELECT COUNT(id) FROM chair WHERE "
 	searchCondition := strings.Join(conditions, " AND ")
 	var res ChairSearchResponse
-	err = db.Get(&res.Count, countQuery+searchCondition, params...)
+	err = dbChair.Get(&res.Count, countQuery+searchCondition, params...)
 	// defer measure.Start("searchChairs_count").Stop()
 	if err != nil {
 		c.Logger().Errorf("searchChairs DB execution error : %v", err)
@@ -635,7 +647,7 @@ func searchChairs(c echo.Context) error {
 	limitOffset := " ORDER BY ngpopularity ASC, id ASC LIMIT ? OFFSET ?"
 	chairs := []Chair{}
 	params = append(params, perPage, page*perPage)
-	err = db.Select(&chairs, searchQuery+searchCondition+limitOffset, params...)
+	err = dbChair.Select(&chairs, searchQuery+searchCondition+limitOffset, params...)
 	// defer measure.Start("searchChairs_get").Stop()
 	if err != nil {
 		if err == sql.ErrNoRows {
@@ -671,7 +683,7 @@ func buyChair(c echo.Context) error {
 		return c.NoContent(http.StatusBadRequest)
 	}
 
-	tx, err := db.Beginx()
+	tx, err := dbChair.Beginx()
 	if err != nil {
 		c.Echo().Logger.Errorf("failed to create transaction : %v", err)
 		return c.NoContent(http.StatusInternalServerError)
@@ -713,7 +725,7 @@ func getLowPricedChair(c echo.Context) error {
 
 	var chairs []Chair
 	query := `SELECT * FROM chair WHERE stock > 0 ORDER BY price ASC, id ASC LIMIT ?`
-	err := db.Select(&chairs, query, Limit)
+	err := dbChair.Select(&chairs, query, Limit)
 	if err != nil {
 		if err == sql.ErrNoRows {
 			c.Logger().Error("getLowPricedChair not found")
