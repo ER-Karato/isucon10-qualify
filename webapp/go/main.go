@@ -13,6 +13,7 @@ import (
 	"regexp"
 	"strconv"
 	"strings"
+	"time"
 
 	"github.com/najeira/measure"
 
@@ -229,7 +230,16 @@ func (mc *MySQLConnectionEnv) ConnectDB() (*sqlx.DB, error) {
 	defer measure.Start("MySQLConnectionEnv.ConnectDB").Stop()
 
 	dsn := fmt.Sprintf("%v:%v@tcp(%v:%v)/%v", mc.User, mc.Password, mc.Host, mc.Port, mc.DBName)
-	return sqlx.Open("mysql", dsn)
+	db, err := sqlx.Open("mysql", dsn)
+	if err != nil {
+		return nil, err
+	}
+
+	db.SetMaxIdleConns(1)
+	db.SetMaxOpenConns(1)
+	db.SetConnMaxLifetime(1 * time.Second)
+
+	return db, err
 }
 
 func init() {
