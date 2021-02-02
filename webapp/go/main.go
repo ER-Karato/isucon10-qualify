@@ -29,6 +29,8 @@ const NazotteLimit = 50
 
 var db *sqlx.DB
 var mySQLConnectionData *MySQLConnectionEnv
+var dbChair *sqlx.DB
+var mySQLConnectionChairData *MySQLConnectionEnv
 var chairSearchCondition ChairSearchCondition
 var estateSearchCondition EstateSearchCondition
 
@@ -217,6 +219,16 @@ func NewMySQLConnectionEnv() *MySQLConnectionEnv {
 	}
 }
 
+func NewMySQLConnectionChairEnv() *MySQLConnectionEnv {
+	return &MySQLConnectionEnv{
+		Host:     getEnv("MYSQL_HOST_CHAIR", "127.0.0.1"),
+		Port:     getEnv("MYSQL_PORT", "3306"),
+		User:     getEnv("MYSQL_USER", "isucon"),
+		DBName:   getEnv("MYSQL_DBNAME", "isuumo"),
+		Password: getEnv("MYSQL_PASS", "isucon"),
+	}
+}
+
 func getEnv(key, defaultValue string) string {
 	val := os.Getenv(key)
 	if val != "" {
@@ -234,11 +246,6 @@ func (mc *MySQLConnectionEnv) ConnectDB() (*sqlx.DB, error) {
 	if err != nil {
 		return nil, err
 	}
-
-	db.SetMaxIdleConns(1)
-	db.SetMaxOpenConns(1)
-	db.SetConnMaxLifetime(1 * time.Second)
-
 	return db, err
 }
 
@@ -294,13 +301,25 @@ func main() {
 	// e.GET("/api/aaa", aaa, skipMiddleware)
 
 	mySQLConnectionData = NewMySQLConnectionEnv()
+	mySQLConnectionChairData = NewMySQLConnectionChairEnv()
 
 	var err error
 	db, err = mySQLConnectionData.ConnectDB()
 	if err != nil {
 		e.Logger.Fatalf("DB connection failed : %v", err)
 	}
-	db.SetMaxOpenConns(10)
+	db.SetMaxIdleConns(300)
+	db.SetMaxOpenConns(300)
+	db.SetConnMaxLifetime(300 * time.Second)
+	defer db.Close()
+
+	dbChair, err = mySQLConnectionChairData.ConnectDB()
+	if err != nil {
+		e.Logger.Fatalf("DB connection failed : %v", err)
+	}
+	dbChair.SetMaxIdleConns(300)
+	dbChair.SetMaxOpenConns(300)
+	dbChair.SetConnMaxLifetime(300 * time.Second)
 	defer db.Close()
 
 	// Start server
