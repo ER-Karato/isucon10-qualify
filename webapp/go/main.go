@@ -357,8 +357,13 @@ func initialize(c echo.Context) error {
 	paths := []string{
 		filepath.Join(sqlDir, "0_Schema.sql"),
 		filepath.Join(sqlDir, "1_DummyEstateData.sql"),
-		filepath.Join(sqlDir, "2_DummyChairData.sql"),
 		filepath.Join(sqlDir, "3_Add.sql"),
+	}
+
+	pathsChair := []string{
+		filepath.Join(sqlDir, "0_Schema.sql"),
+		filepath.Join(sqlDir, "2_DummyChairData.sql"),
+		filepath.Join(sqlDir, "4_Add_Chair.sql"),
 	}
 
 	for _, p := range paths {
@@ -371,7 +376,16 @@ func initialize(c echo.Context) error {
 			mySQLConnectionData.DBName,
 			sqlFile,
 		)
-		cmdStr2 := fmt.Sprintf("mysql -h %v -u %v -p%v -P %v %v < %v",
+
+		if err := exec.Command("bash", "-c", cmdStr).Run(); err != nil {
+			c.Logger().Errorf("Initialize script error : %v", err)
+			return c.NoContent(http.StatusInternalServerError)
+		}
+	}
+
+	for _, p := range pathsChair {
+		sqlFile, _ := filepath.Abs(p)
+		cmdStr := fmt.Sprintf("mysql -h %v -u %v -p%v -P %v %v < %v",
 			mySQLConnectionChairData.Host,
 			mySQLConnectionChairData.User,
 			mySQLConnectionChairData.Password,
@@ -380,10 +394,6 @@ func initialize(c echo.Context) error {
 			sqlFile,
 		)
 		if err := exec.Command("bash", "-c", cmdStr).Run(); err != nil {
-			c.Logger().Errorf("Initialize script error : %v", err)
-			return c.NoContent(http.StatusInternalServerError)
-		}
-		if err := exec.Command("bash", "-c", cmdStr2).Run(); err != nil {
 			c.Logger().Errorf("Initialize script error : %v", err)
 			return c.NoContent(http.StatusInternalServerError)
 		}
