@@ -166,7 +166,7 @@
   environment:
     <<: *env
   shell: |
-    mysql -u isucon -pisucon < webapp/mysql/db/0_Schema.sql
+    mysql -h 172.28.128.78 -u isucon -pisucon < webapp/mysql/db/0_Schema.sql
 
 - name: Install frontend packages
   become: yes
