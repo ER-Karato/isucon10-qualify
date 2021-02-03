@@ -643,17 +643,19 @@ func searchChairs(c echo.Context) error {
 		return c.NoContent(http.StatusBadRequest)
 	}
 
-	countQuery := "SELECT COUNT(id) FROM chair WHERE "
-	searchCondition := strings.Join(conditions, " AND ")
-	var res ChairSearchResponse
-	err = dbChair.Get(&res.Count, countQuery+searchCondition, params...)
-	defer measure.Start("searchChairs_count").Stop()
-	if err != nil {
-		c.Logger().Errorf("searchChairs DB execution error : %v", err)
-		return c.NoContent(http.StatusInternalServerError)
-	}
+	// countQuery := "SELECT COUNT(id) FROM chair WHERE "
+	// searchCondition := strings.Join(conditions, " AND ")
+	// var res ChairSearchResponse
+	// err = dbChair.Get(&res.Count, countQuery+searchCondition, params...)
+	// defer measure.Start("searchChairs_count").Stop()
+	// if err != nil {
+	// 	c.Logger().Errorf("searchChairs DB execution error : %v", err)
+	// 	return c.NoContent(http.StatusInternalServerError)
+	// }
 
+	var res ChairSearchResponse
 	searchQuery := "SELECT * FROM chair WHERE "
+	searchCondition := strings.Join(conditions, " AND ")
 	limitOffset := " ORDER BY ngpopularity ASC, id ASC LIMIT ? OFFSET ?"
 	chairs := []Chair{}
 	params = append(params, perPage, page*perPage)
@@ -666,8 +668,14 @@ func searchChairs(c echo.Context) error {
 		c.Logger().Errorf("searchChairs DB execution error : %v", err)
 		return c.NoContent(http.StatusInternalServerError)
 	}
-
 	res.Chairs = chairs
+
+	err = dbChair.Get(&res.Count, `SELECT FOUND_ROWS()`)
+	defer measure.Start("searchChairs_count").Stop()
+	if err != nil {
+		c.Logger().Errorf("searchChairs DB execution error : %v", err)
+		return c.NoContent(http.StatusInternalServerError)
+	}
 
 	return c.JSON(http.StatusOK, res)
 }
@@ -971,17 +979,19 @@ func searchEstates(c echo.Context) error {
 		return c.NoContent(http.StatusBadRequest)
 	}
 
-	countQuery := "SELECT COUNT(id) FROM estate WHERE "
-	searchCondition := strings.Join(conditions, " AND ")
-	var res EstateSearchResponse
-	err = db.Get(&res.Count, countQuery+searchCondition, params...)
-	defer measure.Start("searchEstates_count").Stop()
-	if err != nil {
-		c.Logger().Errorf("searchEstates DB execution error : %v", err)
-		return c.NoContent(http.StatusInternalServerError)
-	}
+	// countQuery := "SELECT COUNT(id) FROM estate WHERE "
+	// searchCondition := strings.Join(conditions, " AND ")
+	// var res EstateSearchResponse
+	// err = db.Get(&res.Count, countQuery+searchCondition, params...)
+	// defer measure.Start("searchEstates_count").Stop()
+	// if err != nil {
+	// 	c.Logger().Errorf("searchEstates DB execution error : %v", err)
+	// 	return c.NoContent(http.StatusInternalServerError)
+	// }
 
+	var res EstateSearchResponse
 	searchQuery := "SELECT * FROM estate WHERE "
+	searchCondition := strings.Join(conditions, " AND ")
 	limitOffset := " ORDER BY ngpopularity ASC, id ASC LIMIT ? OFFSET ?"
 	estates := []Estate{}
 	params = append(params, perPage, page*perPage)
@@ -994,8 +1004,14 @@ func searchEstates(c echo.Context) error {
 		c.Logger().Errorf("searchEstates DB execution error : %v", err)
 		return c.NoContent(http.StatusInternalServerError)
 	}
-
 	res.Estates = estates
+
+	err = db.Get(&res.Count, `SELECT FOUND_ROWS()`)
+	defer measure.Start("searchEstates_count").Stop()
+	if err != nil {
+		c.Logger().Errorf("searchEstates DB execution error : %v", err)
+		return c.NoContent(http.StatusInternalServerError)
+	}
 
 	return c.JSON(http.StatusOK, res)
 }
