@@ -530,6 +530,7 @@ func postChair(c echo.Context) error {
 		c.Logger().Errorf("failed to commit tx: %v", err)
 		return c.NoContent(http.StatusInternalServerError)
 	}
+	lowPricedchairs = []Chair{}
 	return c.NoContent(http.StatusCreated)
 }
 
@@ -731,6 +732,8 @@ func buyChair(c echo.Context) error {
 		return c.NoContent(http.StatusInternalServerError)
 	}
 
+	lowPricedchairs = []Chair{}
+
 	return c.NoContent(http.StatusOK)
 }
 
@@ -738,21 +741,27 @@ func getChairSearchCondition(c echo.Context) error {
 	return c.JSON(http.StatusOK, chairSearchCondition)
 }
 
+var lowPricedchairs []Chair
+
 func getLowPricedChair(c echo.Context) error {
 	defer measure.Start("getLowPricedChair").Stop()
 
 	var chairs []Chair
-	query := `SELECT * FROM chair WHERE stock > 0 ORDER BY price ASC, id ASC LIMIT ?`
-	err := dbChair.Select(&chairs, query, Limit)
-	if err != nil {
-		if err == sql.ErrNoRows {
-			c.Logger().Error("getLowPricedChair not found")
-			return c.JSON(http.StatusOK, ChairListResponse{[]Chair{}})
+	if len(lowPricedchairs) > 0 {
+		chairs = lowPricedchairs
+	} else {
+		query := `SELECT * FROM chair WHERE stock > 0 ORDER BY price ASC, id ASC LIMIT ?`
+		err := dbChair.Select(&chairs, query, Limit)
+		if err != nil {
+			if err == sql.ErrNoRows {
+				c.Logger().Error("getLowPricedChair not found")
+				return c.JSON(http.StatusOK, ChairListResponse{[]Chair{}})
+			}
+			c.Logger().Errorf("getLowPricedChair DB execution error : %v", err)
+			return c.NoContent(http.StatusInternalServerError)
 		}
-		c.Logger().Errorf("getLowPricedChair DB execution error : %v", err)
-		return c.NoContent(http.StatusInternalServerError)
+		lowPricedchairs = chairs
 	}
-
 	return c.JSON(http.StatusOK, ChairListResponse{Chairs: chairs})
 }
 
