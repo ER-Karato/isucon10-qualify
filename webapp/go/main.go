@@ -320,7 +320,7 @@ func main() {
 	dbChair.SetMaxIdleConns(300)
 	dbChair.SetMaxOpenConns(300)
 	dbChair.SetConnMaxLifetime(300 * time.Second)
-	defer db.Close()
+	defer dbChair.Close()
 
 	// Start server
 	serverPort := fmt.Sprintf(":%v", getEnv("SERVER_PORT", "1323"))
