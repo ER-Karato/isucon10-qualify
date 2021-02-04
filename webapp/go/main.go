@@ -643,7 +643,7 @@ func searchChairs(c echo.Context) error {
 		return c.NoContent(http.StatusBadRequest)
 	}
 
-	searchQuery := "SELECT * FROM chair WHERE "
+	searchQuery := "SELECT SQL_CALC_FOUND_ROWS * FROM chair WHERE "
 	searchCondition := strings.Join(conditions, " AND ")
 	limitOffset := " ORDER BY ngpopularity ASC, id ASC LIMIT ? OFFSET ?"
 
@@ -979,7 +979,7 @@ func searchEstates(c echo.Context) error {
 		return c.NoContent(http.StatusBadRequest)
 	}
 
-	searchQuery := "SELECT * FROM estate WHERE "
+	searchQuery := "SELECT SQL_CALC_FOUND_ROWS * FROM estate WHERE "
 	searchCondition := strings.Join(conditions, " AND ")
 	limitOffset := " ORDER BY ngpopularity ASC, id ASC LIMIT ? OFFSET ?"
 
