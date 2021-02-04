@@ -399,6 +399,9 @@ func initialize(c echo.Context) error {
 		}
 	}
 
+	lowPricedchairs = []Chair{}
+	lowPricedEstate = []Estate{}
+
 	return c.JSON(http.StatusOK, InitializeResponse{
 		Language: "go",
 	})
