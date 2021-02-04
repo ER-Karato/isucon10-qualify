@@ -34,6 +34,12 @@ var mySQLConnectionChairData *MySQLConnectionEnv
 var chairSearchCondition ChairSearchCondition
 var estateSearchCondition EstateSearchCondition
 
+var lowPricedEstate []Estate
+var lowPricedchairs []Chair
+
+var searchEstateSearchResponse map[string]EstateSearchResponse
+var searchChairSearchResponse map[string]ChairSearchResponse
+
 var rep = regexp.MustCompile(`ISUCONbot(-Mobile)?|ISUCONbot-Image\/|Mediapartners-ISUCON|ISUCONCoffee|ISUCONFeedSeeker(Beta)?|crawler \(https:\/\/isucon\.invalid\/(support\/faq\/|help\/jp\/)| isubot| Isupider|Isupider(-image)?\+|(bot|crawler|spider)(?:[-_ .\/;@()]|$)`)
 
 type InitializeResponse struct {
@@ -402,6 +408,9 @@ func initialize(c echo.Context) error {
 	lowPricedchairs = []Chair{}
 	lowPricedEstate = []Estate{}
 
+	searchEstateSearchResponse = map[string]EstateSearchResponse{}
+	searchChairSearchResponse = map[string]ChairSearchResponse{}
+
 	return c.JSON(http.StatusOK, InitializeResponse{
 		Language: "go",
 	})
@@ -534,6 +543,7 @@ func postChair(c echo.Context) error {
 		return c.NoContent(http.StatusInternalServerError)
 	}
 	lowPricedchairs = []Chair{}
+	searchChairSearchResponse = map[string]ChairSearchResponse{}
 	return c.NoContent(http.StatusCreated)
 }
 
@@ -653,34 +663,38 @@ func searchChairs(c echo.Context) error {
 
 	var res ChairSearchResponse
 
-	countQuery := "SELECT COUNT(id) FROM chair WHERE "
-	err = dbChair.Get(&res.Count, countQuery+searchCondition, params...)
-	defer measure.Start("searchChairs_count").Stop()
-	if err != nil {
-		c.Logger().Errorf("searchChairs DB execution error : %v", err)
-		return c.NoContent(http.StatusInternalServerError)
-	}
-
-	chairs := []Chair{}
-	params = append(params, perPage, page*perPage)
-	err = dbChair.Select(&chairs, searchQuery+searchCondition+limitOffset, params...)
-	defer measure.Start("searchChairs_get").Stop()
-	if err != nil {
-		if err == sql.ErrNoRows {
-			return c.JSON(http.StatusOK, ChairSearchResponse{Count: 0, Chairs: []Chair{}})
+	if v, ok := searchChairSearchResponse[searchCondition]; ok {
+		res = v
+	} else {
+		countQuery := "SELECT COUNT(id) FROM chair WHERE "
+		err = dbChair.Get(&res.Count, countQuery+searchCondition, params...)
+		defer measure.Start("searchChairs_count").Stop()
+		if err != nil {
+			c.Logger().Errorf("searchChairs DB execution error : %v", err)
+			return c.NoContent(http.StatusInternalServerError)
 		}
-		c.Logger().Errorf("searchChairs DB execution error : %v", err)
-		return c.NoContent(http.StatusInternalServerError)
+
+		chairs := []Chair{}
+		params = append(params, perPage, page*perPage)
+		err = dbChair.Select(&chairs, searchQuery+searchCondition+limitOffset, params...)
+		defer measure.Start("searchChairs_get").Stop()
+		if err != nil {
+			if err == sql.ErrNoRows {
+				return c.JSON(http.StatusOK, ChairSearchResponse{Count: 0, Chairs: []Chair{}})
+			}
+			c.Logger().Errorf("searchChairs DB execution error : %v", err)
+			return c.NoContent(http.StatusInternalServerError)
+		}
+		res.Chairs = chairs
+		searchChairSearchResponse[searchCondition] = res
+
+		// err = dbChair.Get(&res.Count, `SELECT FOUND_ROWS()`)
+		// defer measure.Start("searchChairs_count").Stop()
+		// if err != nil {
+		// 	c.Logger().Errorf("searchChairs DB execution error : %v", err)
+		// 	return c.NoContent(http.StatusInternalServerError)
+		// }
 	}
-	res.Chairs = chairs
-
-	// err = dbChair.Get(&res.Count, `SELECT FOUND_ROWS()`)
-	// defer measure.Start("searchChairs_count").Stop()
-	// if err != nil {
-	// 	c.Logger().Errorf("searchChairs DB execution error : %v", err)
-	// 	return c.NoContent(http.StatusInternalServerError)
-	// }
-
 	return c.JSON(http.StatusOK, res)
 }
 
@@ -736,6 +750,7 @@ func buyChair(c echo.Context) error {
 	}
 
 	lowPricedchairs = []Chair{}
+	searchChairSearchResponse = map[string]ChairSearchResponse{}
 
 	return c.NoContent(http.StatusOK)
 }
@@ -743,8 +758,6 @@ func buyChair(c echo.Context) error {
 func getChairSearchCondition(c echo.Context) error {
 	return c.JSON(http.StatusOK, chairSearchCondition)
 }
-
-var lowPricedchairs []Chair
 
 func getLowPricedChair(c echo.Context) error {
 	defer measure.Start("getLowPricedChair").Stop()
@@ -908,6 +921,7 @@ func postEstate(c echo.Context) error {
 		return c.NoContent(http.StatusInternalServerError)
 	}
 	lowPricedEstate = []Estate{}
+	searchEstateSearchResponse = map[string]EstateSearchResponse{}
 	return c.NoContent(http.StatusCreated)
 }
 
@@ -998,27 +1012,31 @@ func searchEstates(c echo.Context) error {
 
 	var res EstateSearchResponse
 
-	countQuery := "SELECT COUNT(id) FROM estate WHERE "
-	err = db.Get(&res.Count, countQuery+searchCondition, params...)
-	defer measure.Start("searchEstates_count").Stop()
-	if err != nil {
-		c.Logger().Errorf("searchEstates DB execution error : %v", err)
-		return c.NoContent(http.StatusInternalServerError)
-	}
-
-	estates := []Estate{}
-	params = append(params, perPage, page*perPage)
-	err = db.Select(&estates, searchQuery+searchCondition+limitOffset, params...)
-	defer measure.Start("searchEstates_get").Stop()
-	if err != nil {
-		if err == sql.ErrNoRows {
-			return c.JSON(http.StatusOK, EstateSearchResponse{Count: 0, Estates: []Estate{}})
+	if v, ok := searchEstateSearchResponse[searchCondition]; ok {
+		res = v
+	} else {
+		countQuery := "SELECT COUNT(id) FROM estate WHERE "
+		err = db.Get(&res.Count, countQuery+searchCondition, params...)
+		defer measure.Start("searchEstates_count").Stop()
+		if err != nil {
+			c.Logger().Errorf("searchEstates DB execution error : %v", err)
+			return c.NoContent(http.StatusInternalServerError)
 		}
-		c.Logger().Errorf("searchEstates DB execution error : %v", err)
-		return c.NoContent(http.StatusInternalServerError)
-	}
-	res.Estates = estates
 
+		estates := []Estate{}
+		params = append(params, perPage, page*perPage)
+		err = db.Select(&estates, searchQuery+searchCondition+limitOffset, params...)
+		defer measure.Start("searchEstates_get").Stop()
+		if err != nil {
+			if err == sql.ErrNoRows {
+				return c.JSON(http.StatusOK, EstateSearchResponse{Count: 0, Estates: []Estate{}})
+			}
+			c.Logger().Errorf("searchEstates DB execution error : %v", err)
+			return c.NoContent(http.StatusInternalServerError)
+		}
+		res.Estates = estates
+		searchEstateSearchResponse[searchCondition] = res
+	}
 	// err = db.Get(&res.Count, `SELECT FOUND_ROWS()`)
 	// defer measure.Start("searchEstates_count").Stop()
 	// if err != nil {
@@ -1028,8 +1046,6 @@ func searchEstates(c echo.Context) error {
 
 	return c.JSON(http.StatusOK, res)
 }
-
-var lowPricedEstate []Estate
 
 func getLowPricedEstate(c echo.Context) error {
 	defer measure.Start("getLowPricedEstate").Stop()
